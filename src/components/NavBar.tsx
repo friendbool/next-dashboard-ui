@@ -6,7 +6,7 @@ const NavBar = () => {
         {/* SEARCH BAR */}
         <div className="hidden md:flex items-center gap-2 text-xs ring-[1.5px] ring-gray-300 px-2 rounded-full">
             <Image src="/search.png" alt="" width={14} height={14} />
-            <input type="text" placeholder="Search..." className="w-[200px] p-2 outline-none" />
+            <input type="text" placeholder="Search..." className="w-[200px] p-2 outline-none bg-transparent" />
         </div>
         {/* ICONS AND USER */}
         <div className="flex items-center gap-6 justify-end w-full">
