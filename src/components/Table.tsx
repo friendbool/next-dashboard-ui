@@ -14,7 +14,7 @@ const Table = ({
         <table className="w-full mt-4">
             <thead>
                 <tr className="text-left text-gray-500 text-sm">
-                    {columns.map(c => (<th key={c.header} className={c.className}>{c.header}</th>))}
+                    {columns.map(c => (<th key={c.accessor} className={c.className}>{c.header}</th>))}
                 </tr>
             </thead>
             <tbody>
