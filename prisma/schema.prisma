@@ -91,7 +91,7 @@ model Class {
 model Subject {
   id      Int       @id @default(autoincrement())
   name    String    @unique
-  techers Teacher[]
+  teachers Teacher[]
   lessons Lesson[]
 }
 
