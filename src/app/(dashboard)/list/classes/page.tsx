@@ -2,21 +2,20 @@ import FormModal from "@/components/FormModal"
 import Pagination from "@/components/Pagination"
 import Table from "@/components/Table"
 import TableSeach from "@/components/TableSeach"
-import { classesData, role } from "@/lib/data"
 import prisma from "@/lib/prisma"
 import { ITEMS_PER_PAGE } from "@/lib/settings"
+import { currentUserId, role } from "@/lib/util"
 import { Class, Grade, Prisma, Teacher } from "@prisma/client"
 import Image from "next/image"
-import Link from "next/link"
 
-type ClassList = Class & { supervisor: Teacher}
+type ClassList = Class & { supervisor: Teacher }
 
 const columns = [
     { header: "Class Name", accessor: "name" },
     { header: "Capacity", accessor: "capacity", className: "hidden md:table-cell" },
     { header: "Grade", accessor: "grade", className: "hidden md:table-cell" },
     { header: "Supervisor", accessor: "supervisor", className: "hidden md:table-cell" },
-    { header: "Actions", accessor: "action" },
+    ...(role === "admin" ? [{ header: "Actions", accessor: "action" }] : []),
 ]
 
 const renderRow = (item: ClassList) => {
@@ -72,6 +71,17 @@ const ClassListPage = async ({ searchParams }: { searchParams: { [key: string]: 
             }
         }
     }
+
+    switch (role) {
+        case "teacher":
+            where.lesson = { some: { teacherId: currentUserId } }
+            break;
+
+        default:
+            break;
+    }
+
+    console.log(where)
 
     const [classesData, count] = await prisma.$transaction([
         prisma.class.findMany({

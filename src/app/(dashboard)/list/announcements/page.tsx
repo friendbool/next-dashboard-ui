@@ -2,12 +2,12 @@ import FormModal from "@/components/FormModal"
 import Pagination from "@/components/Pagination"
 import Table from "@/components/Table"
 import TableSeach from "@/components/TableSeach"
-import { announcementsData, role } from "@/lib/data"
 import prisma from "@/lib/prisma"
 import { ITEMS_PER_PAGE } from "@/lib/settings"
+import { currentUserId, role } from "@/lib/util"
+import { auth } from "@clerk/nextjs/server"
 import { Announcement, Class, Prisma } from "@prisma/client"
 import Image from "next/image"
-import Link from "next/link"
 
 type AnnouncmentList = Announcement & { class: Class }
 
@@ -15,7 +15,7 @@ const columns = [
     { header: "Title", accessor: "title" },
     { header: "Class", accessor: "class" },
     { header: "Date", accessor: "date", className: "hidden md:table-cell" },
-    { header: "Actions", accessor: "action" },
+    ...(role === "admin" ? [{ header: "Actions", accessor: "action" }] : []),
 ]
 
 
@@ -26,7 +26,7 @@ const renderRow = (item: AnnouncmentList) => {
                 <h3 className="font-semibold">{item.title}</h3>
             </div>
         </td>
-        <td>{item.class.name}</td>
+        <td>{item.class?.name || "-"}</td>
         <td className="hidden md:table-cell">{item.date.toLocaleDateString()}</td>
         <td>
             <div className="flex items-center gap-2">
@@ -66,6 +66,30 @@ const AnnouncementListPage = async ({ searchParams }: { searchParams: { [key: st
                     break;
             }
         }
+    }
+
+    // FILTRI DI SESSIONE
+    switch (role) {
+        case "admin":
+            break;
+        case "teacher":
+            where.OR = [
+                { class: { lesson: { some: { teacherId: currentUserId } } } },
+                { classId: null }
+            ]
+            break;
+        case "student":
+            where.OR = [
+                { class: { students: { some: { id: currentUserId! }, } } },
+                { classId: null }
+            ]
+            break;
+        case "parent":
+            where.OR = [
+                { class: { students: { some: { parentId: currentUserId! } } } },
+                { classId: null }
+            ]
+            break;
     }
 
     const [announcementsData, count] = await prisma.$transaction([

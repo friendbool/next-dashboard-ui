@@ -2,9 +2,9 @@ import FormModal from "@/components/FormModal"
 import Pagination from "@/components/Pagination"
 import Table from "@/components/Table"
 import TableSeach from "@/components/TableSeach"
-import { role, studentsData } from "@/lib/data"
 import prisma from "@/lib/prisma"
 import { ITEMS_PER_PAGE } from "@/lib/settings"
+import { currentUserId, role } from "@/lib/util"
 import { Class, Grade, Prisma, Student } from "@prisma/client"
 import Image from "next/image"
 import Link from "next/link"
@@ -17,7 +17,7 @@ const columns = [
     { header: "Grade", accessor: "grade", className: "hidden md:table-cell" },
     { header: "Phone", accessor: "phone", className: "hidden lg:table-cell" },
     { header: "Address", accessor: "address", className: "hidden lg:table-cell" },
-    { header: "Actions", accessor: "action" },
+    ...(role === "admin" ? [{ header: "Actions", accessor: "action" }] : []),
 ]
 
 const renderRow = (item: StudentList) => {
@@ -41,9 +41,6 @@ const renderRow = (item: StudentList) => {
                     </button>
                 </Link>
                 {role === "admin" &&
-                    // <button className="w-7 h-7 flex items-center justify-center rounded-full bg-lamaPurple">
-                    //     <Image src={"/delete.png"} alt="" width={16} height={16} />
-                    // </button>
                     <FormModal table="student" type="delete" id={item.id} />
                 }
             </div>
@@ -76,6 +73,13 @@ const StudentListPage = async ({ searchParams }: { searchParams: { [key: string]
         }
     }
 
+    // ROLE
+    // switch (role) {
+    //     case "teacher":
+    //         where.class = { lesson: { some: { teacherId: currentUserId } } }
+    //         break;
+    // }
+
     const [studentsData, count] = await prisma.$transaction([
         prisma.student.findMany({
             where: where,
@@ -106,9 +110,6 @@ const StudentListPage = async ({ searchParams }: { searchParams: { [key: string]
                             <Image src="/sort.png" alt="" width={14} height={14} />
                         </button>
                         {role === "admin" &&
-                            // <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-                            //     <Image src="/plus.png" alt="" width={14} height={14} />
-                            // </button>
                             <FormModal table="student" type="create" />
                         }
                     </div>

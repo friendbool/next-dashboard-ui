@@ -2,9 +2,9 @@ import FormModal from "@/components/FormModal"
 import Pagination from "@/components/Pagination"
 import Table from "@/components/Table"
 import TableSeach from "@/components/TableSeach"
-import { assignmentsData, role } from "@/lib/data"
 import prisma from "@/lib/prisma"
 import { ITEMS_PER_PAGE } from "@/lib/settings"
+import { currentUserId, role } from "@/lib/util"
 import { Assignment, Class, Prisma, Subject, Teacher } from "@prisma/client"
 import Image from "next/image"
 import Link from "next/link"
@@ -16,7 +16,7 @@ const columns = [
     { header: "Class", accessor: "class" },
     { header: "Teacher", accessor: "teacher", className: "hidden md:table-cell" },
     { header: "Due Date", accessor: "dueDate", className: "hidden lg:table-cell" },
-    { header: "Actions", accessor: "action" },
+    ...(role === "admin" || role === "teacher") ? [{ header: "Actions", accessor: "action" }] : [],
 ]
 const renderRow = (item: AssignmentList) => {
     return <tr key={item.id} className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight">
@@ -35,7 +35,7 @@ const renderRow = (item: AssignmentList) => {
                         <Image src={"/edit.png"} alt="" width={16} height={16} />
                     </button>
                 </Link> */}
-                {role === "admin" &&
+                {(role === "admin" || role === "teacher") &&
                     // <button className="w-7 h-7 flex items-center justify-center rounded-full bg-lamaPurple">
                     //     <Image src={"/delete.png"} alt="" width={16} height={16} />
                     // </button>
@@ -57,16 +57,20 @@ const AssignmentListPage = async ({ searchParams }: { searchParams: { [key: stri
 
     const where: Prisma.AssignmentWhereInput = {}
 
+    where.lesson = {}
+
+    // FILTRI DA URL
     for (const [key, value] of Object.entries(queryParams)) {
         if (value !== undefined) {
             switch (key) {
                 case "teacherId":
-                    where.lesson = { teacherId: value }
+                    where.lesson.teacherId = value;
                     break;
                 case "classId":
-                    where.lesson = { classId: parseInt(value) }
+                    where.lesson.classId = parseInt(value)
                     break;
                 case "search":
+                    // where.lesson.subject = { name: { contains: value, mode: "insensitive" } };
                     where.OR = [
                         { lesson: { subject: { name: { contains: value, mode: "insensitive" } } } },
                         { lesson: { teacher: { name: { contains: value, mode: "insensitive" } } } },
@@ -78,6 +82,23 @@ const AssignmentListPage = async ({ searchParams }: { searchParams: { [key: stri
             }
         }
     }
+
+    // FILTRI DI SESSIONE
+    switch (role) {
+        case "admin":
+            break;
+        case "teacher":
+            where.lesson.teacherId = currentUserId;
+            break;
+        case "student":
+            where.lesson.class = { students: { some: { id: currentUserId! }, } }
+            break;
+        case "parent":
+            where.lesson.class = { students: { some: { parentId: currentUserId! }, } }
+            break;
+    }
+
+    // console.log(where)
 
     const [assignmentsData, count] = await prisma.$transaction([
         prisma.assignment.findMany({
@@ -112,7 +133,7 @@ const AssignmentListPage = async ({ searchParams }: { searchParams: { [key: stri
                         <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
                             <Image src="/sort.png" alt="" width={14} height={14} />
                         </button>
-                        {role === "admin" &&
+                        {(role === "admin" || role === "teacher") &&
                             // <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
                             //     <Image src="/plus.png" alt="" width={14} height={14} />
                             // </button>

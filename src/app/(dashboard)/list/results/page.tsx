@@ -2,9 +2,9 @@ import FormModal from "@/components/FormModal"
 import Pagination from "@/components/Pagination"
 import Table from "@/components/Table"
 import TableSeach from "@/components/TableSeach"
-import { resultsData, role } from "@/lib/data"
 import prisma from "@/lib/prisma"
 import { ITEMS_PER_PAGE } from "@/lib/settings"
+import { currentUserId, role } from "@/lib/util"
 import { Prisma, Result, Student } from "@prisma/client"
 import Image from "next/image"
 import Link from "next/link"
@@ -28,7 +28,7 @@ const columns = [
     { header: "Teacher", accessor: "teacher", className: "hidden lg:table-cell" },
     { header: "Class", accessor: "class", className: "hidden lg:table-cell" },
     { header: "Date", accessor: "date", className: "hidden lg:table-cell" },
-    { header: "Actions", accessor: "action" },
+    ...(role === "admin" || role === "teacher" ? [{ header: "Actions", accessor: "action" }] : []),
 ]
 
 const renderRow = (item: ResultList) => {
@@ -50,10 +50,7 @@ const renderRow = (item: ResultList) => {
                             <Image src={"/edit.png"} alt="" width={16} height={16} />
                         </button>
                     </Link> */}
-                {role === "admin" &&
-                    // <button className="w-7 h-7 flex items-center justify-center rounded-full bg-lamaPurple">
-                    //     <Image src={"/delete.png"} alt="" width={16} height={16} />
-                    // </button>
+                {(role === "admin" || role === "teacher") &&
                     <>
                         <FormModal table="result" type="update" data={item} id={item.id} />
                         <FormModal table="result" type="delete" id={item.id} />
@@ -94,6 +91,26 @@ const ResultListPage = async ({ searchParams }: { searchParams: { [key: string]:
                     break;
             }
         }
+    }
+
+    // role condition
+    switch (role) {
+        case "teacher":
+            where.AND = [{
+                OR: [
+                    { exam: { lesson: { teacherId: currentUserId } } },
+                    { assignment: { lesson: { teacherId: currentUserId } } }
+                ]
+            }]
+            break;
+        case "student":
+            where.studentId = currentUserId;
+            break;
+        case "parent":
+            where.student = { parentId: currentUserId! }
+            break;
+        default:
+            break;
     }
 
     const [resultsDataResponse, count] = await prisma.$transaction([
@@ -161,7 +178,7 @@ const ResultListPage = async ({ searchParams }: { searchParams: { [key: string]:
                         <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
                             <Image src="/sort.png" alt="" width={14} height={14} />
                         </button>
-                        {role === "admin" &&
+                        {(role === "admin" || role === "teacher") &&
                             // <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
                             //     <Image src="/plus.png" alt="" width={14} height={14} />
                             // </button>

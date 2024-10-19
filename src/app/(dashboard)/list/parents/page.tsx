@@ -2,9 +2,9 @@ import FormModal from "@/components/FormModal"
 import Pagination from "@/components/Pagination"
 import Table from "@/components/Table"
 import TableSeach from "@/components/TableSeach"
-import { parentsData, role } from "@/lib/data"
 import prisma from "@/lib/prisma"
 import { ITEMS_PER_PAGE } from "@/lib/settings"
+import { role } from "@/lib/util"
 import { Parent, Prisma, Student } from "@prisma/client"
 import Image from "next/image"
 import Link from "next/link"
@@ -16,7 +16,7 @@ const columns = [
     { header: "Student Name", accessor: "students", className: "hidden md:table-cell" },
     { header: "Phone", accessor: "phone", className: "hidden md:table-cell" },
     { header: "Address", accessor: "address", className: "hidden lg:table-cell" },
-    { header: "Actions", accessor: "action" },
+    ...(role === "admin" ? [{ header: "Actions", accessor: "action" }] : []),
 ]
 
 const renderRow = (item: ParentList) => {
@@ -27,7 +27,7 @@ const renderRow = (item: ParentList) => {
                 <p className="text-xs text-gray-500">{item.email}</p>
             </div>
         </td>
-        <td className="hidden md:table-cell">{item.students.map(i=> i.name).join(',')}</td>
+        <td className="hidden md:table-cell">{item.students.map(i => i.name).join(',')}</td>
         <td className="hidden md:table-cell">{item.phone}</td>
         <td className="hidden md:table-cell">{item.address}</td>
         <td>

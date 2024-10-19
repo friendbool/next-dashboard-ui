@@ -7,8 +7,6 @@ const matchers = Object.keys(routeAccessMap).map(route => ({
     allowedRoles: routeAccessMap[route]
 }))
 
-const isProtectedRoute = createRouteMatcher(['/admin', '/teacher'])
-
 export default clerkMiddleware((auth, req) => {
     // if (isProtectedRoute(req)) auth().protect()
     const { sessionClaims } = auth()
